@@ -1,0 +1,27 @@
+{
+	"name": "televic-dcerno",
+	"version": "1.0.0",
+	"api_version": "1.0.0",
+	"keywords": [
+		"Microphone",
+		"Audio"
+	],
+	"manufacturer": "Televic",
+	"product": "D-CERNO",
+	"shortname": "d-cerno",
+	"description": "",
+	"main": "src/index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/bitfocus/companion-module-televic-dcerno.git"
+	},
+	"author": "Joseph Adams <josephdadams@gmail.com>",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/bitfocus/companion-module-televic-dcerno/issues"
+	},
+	"homepage": "https://github.com/bitfocus/companion-module-televic-dcerno#readme"
+}
