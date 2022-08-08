@@ -172,6 +172,7 @@ instance.prototype.init_tcp = function() {
 
 		self.socket.on('data', function(chunk) {
 			chunk = chunk.toString('utf8');
+
 			let i = 0, line = '', offset = 0;
 			receivebuffer += chunk;
 
@@ -193,26 +194,50 @@ instance.prototype.init_tcp = function() {
 				self.log('info', 'Received: ' + line);
 			}
 
-			let type = line.substr(2, 3); //packet type: evt, rep, etc.
-			let jsonString = line.substring(line.indexOf('{'), line.indexOf(self.ETX));
-
 			try {
 				//try to parse the JSON
-				let obj = JSON.parse(jsonString);
+				let type = line.substr(4, 3); //packet type: evt, rep, etc.
+				let obj = self.extractJSON(line)[0];
 
 				self.updateData(type, obj);
 			}
 			catch(error) {
 				//unable to parse it
-				debug('Unable to parse incoming JSON: ');
-				debug(jsonString);
+				debug('Unable to parse incoming JSON from device: ');
+				debug(line);
 
 				if (self.config.verbose) {
-					self.log('info', 'Unable to parse JSON: ' + jsonString);
+					self.log('info', 'Unable to parse JSON from device: ' + line);
 				}
 			}
 		});
 	}
+};
+
+instance.prototype.extractJSON = function(str) {
+	var firstOpen, firstClose, candidate;
+	firstOpen = str.indexOf('{', firstOpen + 1);
+	do {
+		firstClose = str.lastIndexOf('}');
+		//console.log('firstOpen: ' + firstOpen, 'firstClose: ' + firstClose);
+		if(firstClose <= firstOpen) {
+			return null;
+		}
+		do {
+			candidate = str.substring(firstOpen, firstClose + 1);
+			//console.log('candidate: ' + candidate);
+			try {
+				var res = JSON.parse(candidate);
+				//console.log('...found');
+				return [res, firstOpen, firstClose + 1];
+			}
+			catch(e) {
+				//console.log('...failed');
+			}
+			firstClose = str.substr(0, firstClose).lastIndexOf('}');
+		} while(firstClose > firstOpen);
+		firstOpen = str.indexOf('{', firstOpen + 1);
+	} while(firstOpen != -1);
 };
 
 instance.prototype.handleError = function(err) {
@@ -260,24 +285,25 @@ instance.prototype.updateData = function(packetType, data) {
 	//do stuff with the data
 	try {
 		if (packetType == 'rep') {
+
 			if (data.inf) {
-				self.SYSTEM.information = data.con.inf;
+				self.SYSTEM.information = data.inf;
 			}
 	
 			if (data.con) {
-				if (data.con.type) {
-					self.SYSTEM.type = data.con.type;
+				if (data.con.hasOwnProperty('typ')) {
+					self.SYSTEM.type = data.con.typ;
 				}
 	
-				if (data.con.nam) {
+				if (data.con.hasOwnProperty('nam')) {
 					self.SYSTEM.name = data.con.nam;
 				}
 	
-				if (data.con.ver) {
+				if (data.con.hasOwnProperty('ver')) {
 					self.SYSTEM.version = data.con.ver;
 				}
 	
-				if (data.con.svr) {
+				if (data.con.hasOwnProperty('svr')) {
 					self.SYSTEM.svr = data.con.svr;
 				}
 			}
@@ -293,22 +319,22 @@ instance.prototype.updateData = function(packetType, data) {
 				let found = false;
 
 				let dataObj = {
-					id: data.uid,
-					label: data.uid,
+					id: data.uid.toUpperCase(),
+					label: data.uid.toUpperCase(),
 					stat: data.stat
 				}
 
 				for (let i = 0; i < self.DATA.length; i++) {
-					if (self.DATA[i].id == data.uid) {
+					if (self.DATA[i].id.toUpperCase() == data.uid.toUpperCase()) {
 						self.DATA[i].stat = data.stat;
 						found = true;
-						rebuild = true;
 						break;
 					}
 				}
 
 				if (!found) {
 					self.DATA.push(dataObj);
+					rebuild = true;
 				}
 			}
 		}
@@ -369,6 +395,7 @@ instance.prototype.buildCommand = function(type, json) {
 
 	let cmd = 
 		self.STX //start of transmission
+		+ '02' //protocol ID
 		+ ':' //delimiter
 		+ type //packet type 'con', 'evt' 'set', 'get', etc.
 		+ self.PACKETID.toString().padStart(4, '0') //unique packet id, is incremented after every command is built, padded to 4 zeroes
@@ -407,7 +434,7 @@ instance.prototype.sendCommand = function(cmd) {
 			self.log('info', 'Sending: ' + cmd);
 		}
 
-		self.socket.send(cmd);
+		self.socket.send(Buffer.from(cmd));
 	}
 	else {
 		debug('Unable to send: Socket not connected.');

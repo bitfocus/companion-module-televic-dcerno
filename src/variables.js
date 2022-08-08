@@ -37,7 +37,7 @@ module.exports = {
 			self.setVariable('type', self.SYSTEM.type);
 			self.setVariable('name', self.SYSTEM.name);
 			self.setVariable('version', self.SYSTEM.version);
-			self.setVariable('svr', self.SYSTEM.svr);
+			self.setVariable('svr', self.SYSTEM.svr.toString());
 
 			if (self.DATA.length > 0 && self.DATA[0].id != -1) {
 				for (let i = 0; i < self.DATA.length; i++) {

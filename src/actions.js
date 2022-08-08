@@ -39,7 +39,7 @@ module.exports = {
 					let obj = {
 						nam: 'smicstat',
 						uid: options.serial,
-						stat: options.status
+						stat: options.status.toString()
 					};
 					self.sendCommand(self.buildCommand('set', obj));
 				}

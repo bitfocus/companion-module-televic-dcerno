@@ -45,7 +45,7 @@ module.exports = {
 				let micObj = self.DATA.find((obj) => obj.id == opt.serial);
 
 				if (micObj && micObj.id !== -1) {
-					if (micObj.stat == opt.status) {
+					if (micObj.stat.toString() == opt.status.toString()) {
 						return true;
 					}
 				}
