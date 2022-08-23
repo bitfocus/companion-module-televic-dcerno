@@ -31,7 +31,14 @@ instance.prototype.SYSTEM = {
 	type: '',
 	name: '',
 	version: '',
-	svr: ''
+	svr: '',
+	lsvol: '',
+	hpvol: '',
+	mmo: '',
+	mio: '',
+	mat: '',
+	mam: '',
+	recstat: ''
 };
 
 instance.prototype.DATA = [
@@ -45,7 +52,7 @@ instance.prototype.init = function() {
 	log = self.log;
 
 	if (self.config.verbose) {
-		self.log('info', 'Verbose mode enabled. Log entries will contain detailed information.');
+		self.log('debug', 'Verbose mode enabled. Log entries will contain detailed information.');
 	}
 
 	self.init_tcp();
@@ -65,7 +72,7 @@ instance.prototype.updateConfig = function(config) {
 	self.config = config;
 
 	if (self.config.verbose) {
-		self.log('info', 'Verbose mode enabled. Log entries will contain detailed information.');
+		self.log('debug', 'Verbose mode enabled. Log entries will contain detailed information.');
 	}
 
 	self.init_tcp();
@@ -140,7 +147,7 @@ instance.prototype.init_tcp = function() {
 
 		self.socket.on('status_change', function (status, message) {
 			if (self.config.verbose) {
-				self.log('info', 'Status change: ' + message);
+				self.log('debug', 'Status change: ' + message);
 			}
 		});
 
@@ -168,6 +175,31 @@ instance.prototype.init_tcp = function() {
 				uid: 0
 			};
 			self.sendCommand(self.buildCommand('get', getobj));
+
+			let getmmoobj = {
+				nam: 'gmmo',
+			};
+			self.sendCommand(self.buildCommand('get', getmmoobj));
+
+			let getmamobj = {
+				nam: 'gmam',
+			};
+			self.sendCommand(self.buildCommand('get', getmamobj));
+
+			let getlsvolobj = {
+				nam: 'glsvol',
+			};
+			self.sendCommand(self.buildCommand('get', getlsvolobj));
+
+			let gethpvolobj = {
+				nam: 'ghpvol',
+			};
+			self.sendCommand(self.buildCommand('get', gethpvolobj));
+
+			let getrecstatobj = {
+				nam: 'grecstat',
+			};
+			self.sendCommand(self.buildCommand('get', getrecstatobj));
 		});
 
 		self.socket.on('data', function(chunk) {
@@ -191,7 +223,7 @@ instance.prototype.init_tcp = function() {
 			debug(line);
 
 			if (self.config.verbose) {
-				self.log('info', 'Received: ' + line);
+				self.log('debug', 'Received: ' + line);
 			}
 
 			try {
@@ -207,7 +239,7 @@ instance.prototype.init_tcp = function() {
 				debug(line);
 
 				if (self.config.verbose) {
-					self.log('info', 'Unable to parse JSON from device: ' + line);
+					self.log('debug', 'Unable to parse JSON from device: ' + line);
 				}
 			}
 		});
@@ -307,9 +339,79 @@ instance.prototype.updateData = function(packetType, data) {
 					self.SYSTEM.svr = data.con.svr;
 				}
 			}
+
+			if (data.nam && data.nam == 'lsvol') {
+				if (data.hasOwnProperty('vol')) {
+					self.SYSTEM.lsvol = data.vol;
+				}
+			}
+
+			if (data.nam && data.nam == 'hpvol') {
+				if (data.hasOwnProperty('vol')) {
+					self.SYSTEM.hpvol = data.vol;
+				}
+			}
+
+			if (data.nam && data.nam == 'mmo') {
+				if (data.hasOwnProperty('mmo')) {
+					self.SYSTEM.mmo = data.mmo;
+				}
+
+				if (data.hasOwnProperty('mio')) {
+					self.SYSTEM.mio = data.mio;
+				}
+
+				if (data.hasOwnProperty('mat')) {
+					self.SYSTEM.mat = data.mat;
+				}
+			}
+
+			if (data.nam && data.nam == 'mam') {
+				if (data.hasOwnProperty('mam')) {
+					self.SYSTEM.mam = data.mam;
+				}
+			}
+
+			if (data.nam && data.nam == 'recstat') {			
+				if (data.hasOwnProperty('stat')) {
+					self.SYSTEM.recstat = data.stat;
+				}
+			}
 		}
 
 		if (packetType == 'evt') {
+			if (data.nam && data.nam == 'lsvol') {
+				if (data.hasOwnProperty('vol')) {
+					self.SYSTEM.lsvol = data.vol;
+				}
+			}
+
+			if (data.nam && data.nam == 'hpvol') {
+				if (data.hasOwnProperty('vol')) {
+					self.SYSTEM.hpvol = data.vol;
+				}
+			}
+
+			if (data.nam && data.nam == 'mmo') {
+				if (data.hasOwnProperty('mmo')) {
+					self.SYSTEM.mmo = data.mmo;
+				}
+
+				if (data.hasOwnProperty('mio')) {
+					self.SYSTEM.mio = data.mio;
+				}
+
+				if (data.hasOwnProperty('mat')) {
+					self.SYSTEM.mat = data.mat;
+				}
+			}
+
+			if (data.nam && data.nam == 'mam') {
+				if (data.hasOwnProperty('mam')) {
+					self.SYSTEM.mam = data.mam;
+				}
+			}
+
 			if (data.nam && data.nam == 'micstat') {
 
 				if (self.DATA[0].id == -1) {
@@ -336,6 +438,10 @@ instance.prototype.updateData = function(packetType, data) {
 					self.DATA.push(dataObj);
 					rebuild = true;
 				}
+			}
+
+			if (data.nam && data.nam == 'recstat') {
+				self.SYSTEM.recstat = data.stat;
 			}
 		}
 
@@ -431,7 +537,7 @@ instance.prototype.sendCommand = function(cmd) {
 
 	if (self.socket !== undefined && self.socket.connected) {
 		if (self.config.verbose) {
-			self.log('info', 'Sending: ' + cmd);
+			self.log('debug', 'Sending: ' + cmd);
 		}
 
 		self.socket.send(Buffer.from(cmd));

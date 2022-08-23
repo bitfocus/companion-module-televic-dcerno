@@ -54,6 +54,37 @@ module.exports = {
 			}
 		}
 
+		feedbacks.recStatus = {
+			type: 'boolean',
+			label: 'Show Recording Status On Button',
+			description: 'Indicate if Recording is in X Status',
+			style: {
+				color: foregroundColor,
+				bgcolor: backgroundColorRed,
+			},
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Indicate in X Status',
+					id: 'status',
+					default: 0,
+					choices: [
+						{ id: 1, label: 'Stopped'},
+						{ id: 2, label: 'Recording'},
+						{ id: 3, label: 'Paused'}
+					]
+				}
+			],
+			callback: function (feedback, bank) {
+				let opt = feedback.options;
+
+				if (self.SYSTEM.recstat.toString() == opt.status.toString()) {
+					return true;
+				}
+
+				return false
+			}
+		}
 
 		return feedbacks
 	}
